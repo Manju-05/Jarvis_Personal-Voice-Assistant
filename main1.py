@@ -1,9 +1,4 @@
-# Create a Virtual Environment and activate it.
-# python -m venv venv
-# .\venv\Scripts\Activate.ps1
-# To create a reqirements file
-# pip freeze -r reqirements.txt 
-
+# Import required libraries
 import speech_recognition as sr
 import webbrowser
 import pyttsx3
@@ -11,31 +6,43 @@ import musiclibrary
 import requests
 from openai import OpenAI
 
+# Initialize recognizer and text-to-speech engine
 recognizer = sr.Recognizer()
 engine = pyttsx3.init()
-newsapikey = " " # Enter your api key 
+
+# Add your API key
+newsapikey = " "
 
 
+# Function to speak text
 def speak(text):
     print("Jarvis:", text)
     engine.say(text)
     engine.runAndWait()
 
 
+# Function to get AI response from OpenAI
 def aiProcess(command):
-    client = OpenAI(api_key=" ") # Enter your Openai api key
+    client = OpenAI(api_key=" ")  # Add your OpenAI API key
 
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "You are a virtual assistant named Jarvis skilled in general tasks like Alexa and Google Cloud. Give short responses please"},
-            {"role": "user", "content": command}
+            {
+                "role": "system",
+                "content": "You are a virtual assistant named Jarvis skilled in general tasks like Alexa and Google Cloud. Give short responses please"
+            },
+            {
+                "role": "user",
+                "content": command
+            }
         ]
     )
 
     return completion.choices[0].message.content
 
 
+# Function to process commands
 def process_command(c):
     command = c.lower()
 
@@ -64,8 +71,8 @@ def process_command(c):
         else:
             speak(f"Sorry, I couldn't find the song {song}.")
 
-    elif "news".lower() in command.lower():
-        url = f"https://newsdata.io/api/1/latest?apikey={newsapikey}&country=in,am,au,sg&language=en&category=education,technology,crime&timezone=Asia/Kolkata"
+    elif "news" in command:
+        url = ""  # Add your news API URL
         try:
             r = requests.get(url)
             if r.status_code == 200:
@@ -78,7 +85,7 @@ def process_command(c):
                 else:
                     speak("No news articles found.")
             else:
-                speak("Failed to fetch news. Please check the API or internet connection.")
+                speak("Failed to fetch news.")
         except Exception as e:
             print(f"Error fetching news: {e}")
 
@@ -91,30 +98,38 @@ def process_command(c):
         speak(output)
 
 
-# Main logic
-speak("Initializing Jarvis...")
+# Main program starts here
+if __name__ == "__main__":
+    speak("Initializing Jarvis...")
 
-while True:
-    try:
-        with sr.Microphone() as source:
-            print("Listening for wake word 'Jarvis'...")
-            audio = recognizer.listen(source, phrase_time_limit=2)
-
-        command = recognizer.recognize_google(audio)
-        print("Heard:", command)
-
-        if command.strip().lower() == "jarvis":
-            speak("Hello Sir!")
-
+    while True:
+        try:
+            # Listen for the wake word
             with sr.Microphone() as source:
-                print("Jarvis Active and Listening...")
-                audio = recognizer.listen(source)
+                print("Listening for wake word 'Jarvis'...")
+                audio = recognizer.listen(source,phrase_time_limit=2)
 
+            # Convert audio to text
             command = recognizer.recognize_google(audio)
-            print("Command:", command)
-            process_command(command)
+            print("Heard:", command)
 
-    except sr.UnknownValueError:
-        print("Sorry, I could not understand the audio.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+            # If wake word is detected
+            if command.strip().lower() == "jarvis":
+                speak("Hello Sir!")
+
+                # Listen for the actual command
+                with sr.Microphone() as source:
+                    print("Jarvis Active and Listening...")
+                    audio = recognizer.listen(source)
+
+                command = recognizer.recognize_google(audio)
+                print("Command:", command)
+                process_command(command)
+
+        # Handle unknown speech
+        except sr.UnknownValueError:
+            print("Sorry, I could not understand the audio.")
+
+        # Handle other errors
+        except Exception as e:
+            print(f"An error occurred: {e}")
